@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: ppt-doc-extractor
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run streamlit_app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    plan: free
