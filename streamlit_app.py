@@ -10,6 +10,9 @@ This app provides a web interface for extracting components from PowerPoint file
 - Session Materials
 """
 
+import warnings
+warnings.filterwarnings("ignore", category=SyntaxWarning)
+
 import streamlit as st
 import tempfile
 import os
