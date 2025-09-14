@@ -16,6 +16,7 @@ warnings.filterwarnings("ignore", category=SyntaxWarning)
 import streamlit as st
 import tempfile
 import os
+import gc
 from pathlib import Path
 import zipfile
 from io import BytesIO
@@ -136,14 +137,8 @@ def process_files(uploaded_files, module_acronym, debug_mode):
             status_text.text("🔍 Extracting content from PowerPoint files...")
             progress_bar.progress(30)
             
-            # Process all files
-            all_content = defaultdict(lambda: {
-                'vocabulary': [],
-                'goals': [],
-                'assessments': [],
-                'careers': [],
-                'materials': []
-            })
+            # Process files one at a time to manage memory usage
+            all_content = {}
             
             # Create containers for real-time feedback
             results_container = st.container()
@@ -152,6 +147,9 @@ def process_files(uploaded_files, module_acronym, debug_mode):
                 filename = os.path.basename(temp_file)
                 status_text.text(f"📖 Processing {filename}...")
                 
+                # Create a new extractor instance for each file to ensure clean state
+                file_extractor = DocumentationExtractor()
+                
                 with results_container:
                     with st.expander(f"📄 {filename}", expanded=False):
                         if debug_mode:
@@ -159,7 +157,7 @@ def process_files(uploaded_files, module_acronym, debug_mode):
                             debug_output = st.empty()
                         
                         # Process file
-                        content = extractor.extract_all_content_from_ppt(temp_file, debug_mode)
+                        content = file_extractor.extract_all_content_from_ppt(temp_file, debug_mode)
                         
                         if any(content.values()):
                             all_content[filename] = content
@@ -191,6 +189,11 @@ def process_files(uploaded_files, module_acronym, debug_mode):
                                         st.write(f"... and {len(content['assessments']) - 2} more")
                         else:
                             st.warning("No content extracted from this file")
+                
+                # Clear memory after processing each file
+                del file_extractor
+                del content
+                gc.collect()
                 
                 progress_bar.progress(30 + (i + 1) * 50 // len(temp_files))
             
